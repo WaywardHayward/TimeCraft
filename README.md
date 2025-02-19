@@ -1,4 +1,7 @@
 
+
+# TimeDP: Learning to Generate Multi-Domain Time Series with Domain Prompts
+
 ## Envirionment Setup
 We recommand using conda as python enviroment manager:
 ```bash
