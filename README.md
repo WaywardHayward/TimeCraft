@@ -1,4 +1,8 @@
-# TimeDP: Learning to Generate Multi-Domain Time Series with Domain Prompts
+# TimeGen: Generic Time Series Generation for Real-World Applications 
+
+## Papers
+- [TimeDP: Learning to Generate Multi-Domain Time Series with Domain Prompts](https://arxiv.org/pdf/2501.05403)
+- [Controllable Financial Market Generation with Diffusion Guided Meta Agent](https://arxiv.org/abs/2408.12991)
 
 ## Overview
 Time series generation is a crucial task for many applications, including data augmentation, forecasting, and privacy-preserving data synthesis. Real-world scenarios often require generating time series data that aligns with given examples. **TimeDP** is designed to address this challenge by learning from multiple domains and generating realistic time series samples based on domain-specific characteristics.
@@ -31,10 +35,6 @@ Most existing time series generation models focus on single-domain data, limitin
 ## TimeDP framework overview
 ![TimeDP framework overview.](./figures/timedp_overview-1.jpeg)
 
-
-## Papers
-- [TimeDP: Learning to Generate Multi-Domain Time Series with Domain Prompts](https://arxiv.org/pdf/2501.05403)
-- [Controllable Financial Market Generation with Diffusion Guided Meta Agent](https://arxiv.org/abs/2408.12991)
 
 ## Installation
 ```bash
