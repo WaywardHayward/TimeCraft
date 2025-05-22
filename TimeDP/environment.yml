@@ -1,4 +1,4 @@
-name: timecraft
+name: timedp
 channels:
   - conda-forge
   - pytorch
