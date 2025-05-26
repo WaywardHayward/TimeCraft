@@ -121,7 +121,7 @@ conda env create -f environment.yaml
 ### 2. Preparation for text controlled generation  
 #### 2.1 Get text templates 
 
-We provide example text templates and you can use them directly to build your dataset [here](Bridge/process/text_templates_example.json).
+We provide example text templates and you can use them directly to build your dataset [here](process/text_templates_example.json).
 These templates are designed to describe time series data in a structured and diverse manner, covering various domains and statistical characteristics.
 
 You can also collect and refine your own text templates using our multi-agent framework. 
