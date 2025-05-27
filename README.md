@@ -17,7 +17,7 @@ To adapt to new domains, TimeCraft employs a lightweight ​​Prototype Assignm
 **TimeCraft** offers a unified, practical solution for real-world time series generation—combining cross-domain generalization, text-based control, and task-aware adaptation. It’s designed to produce high-quality, controllable synthetic data that’s both realistic and useful for downstream applications.
 
 
-## Framework Overview
+## 🗺️ Framework Overview
 ![TimeDP framework overview.](./figures/overview_2.png)
 
 
@@ -53,7 +53,7 @@ To adapt to new domains, TimeCraft employs a lightweight ​​Prototype Assignm
 * **State-of-the-Art Results**: Achieves superior performance across both in-domain and unseen-domain benchmarks for both fedility and controllability.
 
 
-## Time Series Prototypes: The Key to Cross-Domain Generation  
+## ✨1. Time Series Prototypes: The Key to Cross-Domain Generation  
 
 At the core of **TimeCraft** lies the concept of **Time Series Prototypes**—a foundational mechanism that enables effective cross-domain generalization. Much like how words serve as the fundamental building blocks for large language models, **time series prototypes** act as the smallest units that define time series styles. These prototypes encapsulate essential patterns such as **trends, seasonal variations, and periodic fluctuations**, allowing the model to understand and generate diverse time series data across multiple domains.  
 
@@ -74,7 +74,7 @@ To address this, we introduce an **example-driven generation mechanism**, where 
 
 This approach eliminates the need for explicit domain labels or textual descriptions, making **TimeCraft** a **highly flexible and adaptive** time series generation framework suited for a wide range of real-world applications.  
 
-## Multi-Agent System and Hybrid Conditioning for Text based Control
+## ✨2. Multi-Agent System and Hybrid Conditioning for Text based Control
 ### Time Series to Text Data Preparation Through Multi-Agent Systems
 
 Generating time series from text can be a highly useful technique as text provides clear and intuitive descriptions of desired trends, statistical properties, and domain-specific nuances. 
@@ -95,7 +95,7 @@ Through this iterative process, the system generates **domain-agnostic templates
 The discrete nature of textual data poses a significant challenge when trying to control the continuous structure of time series data. 
 We address the challenge of **text-controlled time series generation** by integrating **textual descriptions** with **semantic prototypes** in a **hybrid prompt**. This enhances the model’s ability to generalize across domains. Diffusion models are used for their proven capability in generating high-quality time series. The **hybrid prompt** is fed into the **cross-attention layers** of the diffusion model, improving control over the generation process. 
 
-## Target-Aware Generation with Influence Function Guidance
+## ✨3. Target-Aware Generation with Influence Function Guidance
 
 TimeCraft includes a lightweight guidance mechanism that enables *task-aware* synthetic time series generation.
 Rather than relying solely on stylistic or domain-level prompts, this mechanism integrates feedback from downstream models to actively steer the diffusion process toward generating data that is directly beneficial for the target application.
@@ -170,7 +170,7 @@ Use `inference.py` for model inference. TimeCraft can generate desired time seri
 Use `inference.py` with the TarDiff module enabled to perform target-aware generation.  
 TimeCraft can generate synthetic time series specifically tailored to improve downstream task performance by integrating guidance signals from your task-specific model and guidance set. Commands can be found here: [inference details](supplementary/inference_details.md).
 
-## Example Run and Expected Results
+## ⚙️ Example Run and Expected Results
 We provide example runs on electricity data set: [examples](supplementary/examples.md).
 
 To further demonstrate the utility of our task-specific data generation approach, we also provide an example run on the MIMIC-III ICU Stay prediction task: [examples](supplementary/example_for_mimic_icustay.md).
