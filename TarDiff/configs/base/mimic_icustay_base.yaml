@@ -67,7 +67,7 @@ model:
         # use_cfg: True
 
 data:
-  target: ldm.data.ts_data_loader.TSClassCondTrainDataModule
+  target: ldm.data.tsg_dataset.TSClassCondTrainDataModule
   params:
     data_path_dict:
       MIMIC_III_Readmission: data/mimic_icustay/train_tuple.pkl
