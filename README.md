@@ -19,7 +19,7 @@ To adapt to new domains, TimeCraft employs a lightweight ​​Prototype Assignm
 
 **TimeCraft** offers a unified, practical solution for real-world time series generation—combining cross-domain generalization, text-based control, and task-aware adaptation. It’s designed to produce high-quality, controllable synthetic data that’s both realistic and useful for downstream applications.
 
-TimeCraft中文版本介绍：[参考链接](https://mp.weixin.qq.com/s/aq3EqnNykXfNMz9LVyRpnw)
+### TimeCraft中文版本介绍：[参考链接](https://mp.weixin.qq.com/s/aq3EqnNykXfNMz9LVyRpnw)
 
 
 ## 🗺️ Framework Overview
