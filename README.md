@@ -50,9 +50,7 @@ TimeCraft achieves the highest text-to-series consistency, improving MSE by 12.5
 
 #### Best Downstream Task Performance
 We tested it on **six medical datasets**, covering tasks like **ICU stay prediction and rare disease diagnosis**.
-Compared to other methods, TarDiff consistently generates data that leads to better or comparable downstream performance — sometimes even outperforms real data.
-
-![Downstream performance.](./figures/TarDiff_result.png)
+Compared to other methods, TarDiff consistently generates data that leads to better or comparable downstream performance — sometimes even outperforms real data. See detailed results in the [paper](https://arxiv.org/pdf/2504.17613).
 
 
 
