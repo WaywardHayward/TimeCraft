@@ -21,6 +21,7 @@ To adapt to new domains, TimeCraft employs a lightweight ​​Prototype Assignm
 
 ### TimeCraft中文版本介绍：[参考链接](https://mp.weixin.qq.com/s/aq3EqnNykXfNMz9LVyRpnw)
 
+---
 
 ## 🗺️ Framework Overview
 ![TimeDP framework overview.](./figures/overview_2.png)
