@@ -138,7 +138,7 @@ Dataset split details can be found here: [Dataset Split](supplementary/dataset_s
 
 ### 3. Preparation for target-aware generation  
 
-#### 31 Prepare the Guidance Set  
+#### 3.1 Prepare the Guidance Set  
 
 TarDiff requires a **guidance set** whose distribution closely approximates that of the downstream task targets. This distributional alignment allows the model to steer the diffusion process toward generating data that is more relevant and useful for downstream applications.  
 
@@ -163,10 +163,13 @@ The detailed descriptions about command line arguments can be referred to in [th
 
 
 ###  5. Generation with TimeCraft Framework
-####  5.1 Controllable Generation with Domain Prompts and Text
+####  5.1 Controllable Generation with Domain Prompts
+Use `inference.py` for model inference. TimeCraft can generate cross-domain time series according to the given domain prompts (composed of prototypes) Commands can be found here: [inference details](supplementary/inference_details.md).
+
+####  5.2 Controllable Generation with Domain Prompts and Text
 Use `inference.py` for model inference. TimeCraft can generate desired time series according to the given domain prompts (composed of prototypes) and texts. Commands can be found here: [inference details](supplementary/inference_details.md).
 
-####  5.2 Target-Aware Generation for Specific Downstream Tasks
+####  5.3 Target-Aware Generation for Specific Downstream Tasks
 Use `inference.py` with the TarDiff module enabled to perform target-aware generation.  
 TimeCraft can generate synthetic time series specifically tailored to improve downstream task performance by integrating guidance signals from your task-specific model and guidance set. Commands can be found here: [inference details](supplementary/inference_details.md).
 
