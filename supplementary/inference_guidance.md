@@ -1,4 +1,4 @@
-# 📘 5.3 Target-Aware Generation for Specific Downstream Tasks
+# 5.3 Target-Aware Generation for Specific Downstream Tasks
 
 This advanced mode enables **target-aware generation**, where the model produces time-series data that is **optimized to improve performance on a specific downstream task** (e.g., classification, detection). It integrates **gradient-based guidance** from a pre-trained classifier into the generation process, steering synthetic data toward task-relevant attributes.
 
