@@ -1,4 +1,4 @@
-# 📘 5.2 Controllable Generation with Domain Prompts and Text
+# 5.2 Controllable Generation with Domain Prompts and Text
 
 This mode combines **textual conditioning** with semantic **prototypes** to offer more expressive and fine-grained control over the generated time series. By including natural language prompts, users can specify high-level trends (e.g., "a rising curve with seasonal dips") or domain-specific features (e.g., "heartbeat pattern after exercise").
 
