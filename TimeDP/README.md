@@ -32,7 +32,7 @@ Most existing time series generation models focus on single-domain data, limitin
 - The generated time series maintains the statistical and temporal characteristics of the target domain.
 
 ## TimeDP framework overview
-![TimeDP framework overview.](./figures/TimeDP_Overview.jpg)
+![TimeDP framework overview.](./figure/TimeDP_Overview.jpg)
 
 
 ## Quick Start
