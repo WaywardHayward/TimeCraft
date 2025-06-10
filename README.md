@@ -64,16 +64,16 @@ Compared to other methods, TarDiff consistently generates data that leads to bet
 - [ICML 2025] BRIDGE: Bootstrapping Text to Control Time-Series Generation via Multi-Agent Iterative Optimization and Diffusion Modelling, [Paper](https://arxiv.org/pdf/2503.02445) / [Code](Bridge)
 
 #### Adaptability
-- [KDD 2025] TarDiff: Target-Oriented Diffusion Guidance  for Synthetic Electronic Health Record  Time Series Generation, [Paper](https://arxiv.org/pdf/2504.17613)
+- [KDD 2025] TarDiff: Target-Oriented Diffusion Guidance  for Synthetic Electronic Health Record  Time Series Generation, [Paper](https://arxiv.org/pdf/2504.17613) / [Code](TarDiff)
 
 #### General Time Series Techniques
-- [ICLR 2024] MG-TSD: Multi-granularity Time Series Diffusion Models with Guided Learning Process, [Paper](https://arxiv.org/pdf/2403.05751)
-- TimeRAF: Retrieval-Augmented Foundation model for Zero-shot Time Series Forecasting, [Paper](https://arxiv.org/pdf/2412.20810)
--	[KDD 2025] InvDiff: Invariant Guidance for Bias Mitigation in Diffusion Models, [Paper](https://arxiv.org/pdf/2412.08480)
+- [ICLR 2024] MG-TSD: Multi-granularity Time Series Diffusion Models with Guided Learning Process, [Paper](https://arxiv.org/pdf/2403.05751) / [Code](https://github.com/Hundredl/MG-TSD)
+- [TKDE] TimeRAF: Retrieval-Augmented Foundation model for Zero-shot Time Series Forecasting, [Paper](https://arxiv.org/pdf/2412.20810)
+-	[KDD 2025] InvDiff: Invariant Guidance for Bias Mitigation in Diffusion Models, [Paper](https://arxiv.org/pdf/2412.08480) / [Code](https://github.com/Hundredl/InvDiff)
 
 #### Finance Application
 
-- Controllable Financial Market Generation with Diffusion Guided Meta Agent, [Paper](https://arxiv.org/pdf/2408.12991)
+- Controllable Financial Market Generation with Diffusion Guided Meta Agent, [Paper](https://arxiv.org/pdf/2408.12991) / [Code](DiGA)
 - [ICLR 2025] MarS: a Financial Market Simulation Engine Powered by Generative Foundation Model, [Paper](https://arxiv.org/pdf/2409.07486)
 
 
