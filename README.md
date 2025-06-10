@@ -61,7 +61,7 @@ Compared to other methods, TarDiff consistently generates data that leads to bet
 
 
 #### Controllability
-- [ICML 2025] BRIDGE: Bootstrapping Text to Control Time-Series Generation via Multi-Agent Iterative Optimization and Diffusion Modelling, [Paper](https://arxiv.org/pdf/2503.02445) / [Code](Bridge)
+- [ICML 2025] BRIDGE: Bootstrapping Text to Control Time-Series Generation via Multi-Agent Iterative Optimization and Diffusion Modelling, [Paper](https://arxiv.org/pdf/2503.02445) / [Code](BRIDGE)
 
 #### Adaptability
 - [KDD 2025] TarDiff: Target-Oriented Diffusion Guidance  for Synthetic Electronic Health Record  Time Series Generation, [Paper](https://arxiv.org/pdf/2504.17613) / [Code](TarDiff)
