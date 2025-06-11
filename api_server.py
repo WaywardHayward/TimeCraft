@@ -23,8 +23,13 @@ from api.models import (
     AggregateTimeSeriesRequest
 )
 from api.helpers import get_component_status
-from api.handlers import (
-    handle_generate_description, handle_refine_text, handle_analyze_csv,
+from api.file_handlers import (
+    handle_generate_description, handle_analyze_csv
+)
+from api.text_handlers import (
+    handle_refine_text
+)
+from api.timeseries_handlers import (
     handle_generate_timeseries_from_text, handle_domain_prompt_generation,
     handle_target_aware_generation, handle_aggregate_timeseries_generation
 )
