@@ -45,6 +45,7 @@ class ChatLLM(BaseModel):
     def generate(self, prompt: str, stop: List[str] = None):
         response = openai.ChatCompletion.create(
             model=self.model,
+            deployment_id=self.model if self.api_type == "azure" else None,
             messages=[{"role": "user", "content": prompt}],
             temperature=self.temperature,
             stop=stop

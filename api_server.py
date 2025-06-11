@@ -19,6 +19,21 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'BRIDGE'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'diffusion'))
 
+
+def log_startup_environment():
+    print("==== TimeCraft API Server Startup ====")
+    print(f"Python version: {sys.version}")
+    print(f"Working directory: {os.getcwd()}")
+    print("Environment variables:")
+    for key, value in os.environ.items():
+        if "KEY" in key.upper() or "SECRET" in key.upper() or "TOKEN" in key.upper() or "PASSWORD" in key.upper():
+            print(f"  {key}: [REDACTED]")
+        else:
+            print(f"  {key}: {value}")
+    print("======================================")
+
+log_startup_environment()
+
 try:
     from fastapi import FastAPI, HTTPException, UploadFile, File
     from fastapi.responses import JSONResponse
@@ -64,6 +79,8 @@ try:
     BRIDGE_TEXT2TS_AVAILABLE = True
     print("BRIDGE text-to-timeseries components loaded successfully.")
 except ImportError:
+    # print actual error message for debugging
+    print(traceback.format_exc())
     BRIDGE_TEXT2TS_AVAILABLE = False
     print("Warning: Could not import BRIDGE text-to-timeseries components.")
 
@@ -179,7 +196,7 @@ async def status():
             "python_path": os.environ.get('PYTHONPATH', ''),
             "openai_api_key_set": bool(os.environ.get('OPENAI_API_KEY')),
             "openai_api_base": os.environ.get('OPENAI_API_BASE', 'default'),
-            "openai_api_version": os.environ.get('OPENAI_API_VERSION', 'default'),
+            "openai_api_version": os.environ.get('OPENAI_API_VERSIONOPENAI_API_VERSION', 'default'),
             "openai_api_type": os.environ.get('OPENAI_API_TYPE', 'openai')
         }
     })
@@ -458,6 +475,10 @@ async def generate_timeseries_from_text(request: TextToTimeSeriesRequest):
             os.environ['OPENAI_API_VERSION'] = request.openai_api_version
         if request.openai_api_type:
             os.environ['OPENAI_API_TYPE'] = request.openai_api_type
+            
+        # output requestion information including OpenAI API settings
+        print(f"Generating time series from text description: {request.text_description}")
+        print(f"Using model: {request.model_name}, Temperature: {request.temperature}")
         
         # Initialize the ChatLLM model
         try:
