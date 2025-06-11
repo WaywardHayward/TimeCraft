@@ -21,6 +21,12 @@
             <h1 class="text-4xl font-bold text-gray-800 mb-2">TimeCraft</h1>
             <p class="text-xl text-gray-600">Scenario-Based Time Series Generator</p>
             <p class="text-sm text-gray-500 mt-2">Generate aggregate time series data from your scenario descriptions</p>
+            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p class="text-sm text-blue-700">
+                    <strong>Note:</strong> This interface connects to the TimeCraft API server on port 8080. 
+                    Please ensure the API server is running for full functionality.
+                </p>
+            </div>
         </div>
 
         <!-- Input Section -->
@@ -246,20 +252,56 @@
             generateBtn.disabled = true;
             generateBtn.textContent = 'Generating...';
 
-            // Simulate processing time
-            setTimeout(() => {
-                try {
-                    currentData = generateMockTimeSeries();
-                    displayResults();
-                    document.getElementById('exportBtn').disabled = false;
-                } catch (error) {
-                    console.error('Error generating time series:', error);
-                    alert('Error generating time series. Please try again.');
-                } finally {
-                    generateBtn.disabled = false;
-                    generateBtn.textContent = 'Generate Time Series';
+            const scenario = document.getElementById('scenarioText').value || 'Generic monitoring scenario';
+            const numTags = parseInt(document.getElementById('numTags').value);
+            const length = parseInt(document.getElementById('dataLength').value);
+            const frequency = document.getElementById('frequency').value;
+
+            // Prepare request data for the API
+            const requestData = {
+                text_description: scenario,
+                num_tags: numTags,
+                sequence_length: length
+            };
+
+            // Call the API endpoint
+            fetch('http://localhost:8080/generate-aggregate-timeseries', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            }, 1000);
+                return response.json();
+            })
+            .then(data => {
+                // Transform API response to match our existing data structure
+                currentData = {
+                    scenario: data.text_description,
+                    tagNames: data.tags,
+                    length: data.sequence_length,
+                    frequency: frequency,
+                    timeSeries: data.aggregate_timeseries,
+                    timestamp: new Date().toISOString(),
+                    apiStatus: data.status,
+                    apiMessage: data.message || null
+                };
+                
+                displayResults();
+                document.getElementById('exportBtn').disabled = false;
+            })
+            .catch(error => {
+                console.error('Error calling API:', error);
+                alert('API server not available. This page requires the TimeCraft API server to be running on port 8080. Please start the server using: python api_server.py');
+            })
+            .finally(() => {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Time Series';
+            });
         }
 
         function displayResults() {
@@ -269,8 +311,11 @@
             document.getElementById('resultsSection').classList.remove('hidden');
 
             // Update generation info
-            document.getElementById('generationInfo').textContent = 
-                `${currentData.tagNames.length} tags, ${currentData.length} points (${currentData.frequency})`;
+            let infoText = `${currentData.tagNames.length} tags, ${currentData.length} points (${currentData.frequency})`;
+            if (currentData.apiStatus && currentData.apiStatus === 'demo_mode') {
+                infoText += ' - Demo Mode';
+            }
+            document.getElementById('generationInfo').textContent = infoText;
 
             // Create chart
             createChart();
