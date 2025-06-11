@@ -32,9 +32,10 @@ RUN echo "fastapi" > requirements.txt && \
     echo "numpy" >> requirements.txt && \
     echo "scikit-learn" >> requirements.txt
 
-# Install Python dependencies
+# Install Python dependencies for REST API and BRIDGE components
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
+    pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt && \
+    pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r bridge_requirements.txt
 
 # Copy application files
 COPY --chown=root:root . .
