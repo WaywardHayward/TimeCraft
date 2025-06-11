@@ -102,6 +102,9 @@ class TextRefinementRequest(BaseModel):
     """Request model for text refinement."""
     initial_text: str
     openai_key: Optional[str] = None
+    openai_api_base: Optional[str] = None
+    openai_api_version: Optional[str] = None
+    openai_api_type: Optional[str] = None
     team_iterations: Optional[int] = 3
     global_iterations: Optional[int] = 2
 
@@ -111,6 +114,9 @@ class TextToTimeSeriesRequest(BaseModel):
     model_name: Optional[str] = "gpt-4o-2024-05-13"
     temperature: Optional[float] = 0.0
     openai_key: Optional[str] = None
+    openai_api_base: Optional[str] = None
+    openai_api_version: Optional[str] = None
+    openai_api_type: Optional[str] = None
 
 class DomainPromptGenerationRequest(BaseModel):
     """Request model for TimeDP domain prompt-based generation."""
@@ -170,7 +176,11 @@ async def status():
         },
         "environment": {
             "data_root": os.environ.get('DATA_ROOT', '/app/data'),
-            "python_path": os.environ.get('PYTHONPATH', '')
+            "python_path": os.environ.get('PYTHONPATH', ''),
+            "openai_api_key_set": bool(os.environ.get('OPENAI_API_KEY')),
+            "openai_api_base": os.environ.get('OPENAI_API_BASE', 'default'),
+            "openai_api_version": os.environ.get('OPENAI_API_VERSION', 'default'),
+            "openai_api_type": os.environ.get('OPENAI_API_TYPE', 'openai')
         }
     })
 
@@ -180,7 +190,10 @@ async def generate_description(
     dataset_name: str = "uploaded_dataset",
     prediction_length: int = 168,
     llm_optimize: bool = False,
-    openai_key: Optional[str] = None
+    openai_key: Optional[str] = None,
+    openai_api_base: Optional[str] = None,
+    openai_api_version: Optional[str] = None,
+    openai_api_type: Optional[str] = None
 ):
     """
     Generate textual descriptions for time series data.
@@ -191,6 +204,9 @@ async def generate_description(
         prediction_length: Prediction length for time series windows
         llm_optimize: Whether to use LLM to optimize text descriptions
         openai_key: OpenAI API key (optional, can be set via environment)
+        openai_api_base: OpenAI API base URL (for Azure OpenAI support)
+        openai_api_version: OpenAI API version (for Azure OpenAI support)
+        openai_api_type: OpenAI API type (for Azure OpenAI support)
     
     Returns:
         JSON response with generation status and results
@@ -219,9 +235,15 @@ async def generate_description(
             tmp_file_path = tmp_file.name
         
         try:
-            # Set OpenAI key if provided
+            # Set OpenAI configuration if provided
             if openai_key:
                 os.environ['OPENAI_API_KEY'] = openai_key
+            if openai_api_base:
+                os.environ['OPENAI_API_BASE'] = openai_api_base
+            if openai_api_version:
+                os.environ['OPENAI_API_VERSION'] = openai_api_version
+            if openai_api_type:
+                os.environ['OPENAI_API_TYPE'] = openai_api_type
             
             # Generate text descriptions
             generate_text_description_for_time_series(
@@ -281,9 +303,15 @@ async def refine_text(request: TextRefinementRequest):
         JSON response with refined text and refinement logs
     """
     try:
-        # Set OpenAI key if provided
+        # Set OpenAI configuration if provided
         if request.openai_key:
             os.environ['OPENAI_API_KEY'] = request.openai_key
+        if request.openai_api_base:
+            os.environ['OPENAI_API_BASE'] = request.openai_api_base
+        if request.openai_api_version:
+            os.environ['OPENAI_API_VERSION'] = request.openai_api_version
+        if request.openai_api_type:
+            os.environ['OPENAI_API_TYPE'] = request.openai_api_type
         
         if not TIMECRAFT_AVAILABLE:
             # Return a mock response when TimeCraft is not available
@@ -421,16 +449,25 @@ async def generate_timeseries_from_text(request: TextToTimeSeriesRequest):
                 "note": "In production, this would generate actual time series from text using BRIDGE model"
             })
         
-        # Set OpenAI key if provided
+        # Set OpenAI configuration if provided
         if request.openai_key:
             os.environ['OPENAI_API_KEY'] = request.openai_key
+        if request.openai_api_base:
+            os.environ['OPENAI_API_BASE'] = request.openai_api_base
+        if request.openai_api_version:
+            os.environ['OPENAI_API_VERSION'] = request.openai_api_version
+        if request.openai_api_type:
+            os.environ['OPENAI_API_TYPE'] = request.openai_api_type
         
         # Initialize the ChatLLM model
         try:
             chat_llm = ChatLLM(
                 model=request.model_name,
                 temperature=request.temperature,
-                api_key=request.openai_key
+                api_key=request.openai_key,
+                api_base=request.openai_api_base,
+                api_version=request.openai_api_version,
+                api_type=request.openai_api_type
             )
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to initialize LLM: {str(e)}")

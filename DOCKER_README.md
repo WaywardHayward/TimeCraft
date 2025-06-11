@@ -81,12 +81,79 @@ curl -X POST "http://localhost:8080/refine-text" \
   }'
 ```
 
+### Generate Time Series from Text (with Azure OpenAI)
+```bash
+curl -X POST "http://localhost:8080/generate-timeseries-from-text" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text_description": "Generate a weekly sales pattern with weekend peaks",
+    "model_name": "gpt-4",
+    "openai_key": "your_azure_openai_key",
+    "openai_api_base": "https://your-resource.openai.azure.com/",
+    "openai_api_version": "2024-02-15-preview",
+    "openai_api_type": "azure"
+  }'
+```
+
+### Text Refinement with Azure OpenAI
+```bash
+curl -X POST "http://localhost:8080/refine-text" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "initial_text": "This time series shows an increasing trend with seasonal variations.",
+    "openai_key": "your_azure_openai_key",
+    "openai_api_base": "https://your-resource.openai.azure.com/",
+    "openai_api_version": "2024-02-15-preview",
+    "openai_api_type": "azure",
+    "team_iterations": 3,
+    "global_iterations": 2
+  }'
+```
+
 ## Configuration
 
 ### Environment Variables
 - `DATA_ROOT` - Data directory path (default: `/app/data`)
 - `PYTHONPATH` - Python module search path
-- `OPENAI_API_KEY` - OpenAI API key for LLM features (optional)
+
+### OpenAI Configuration
+For LLM-powered features, configure OpenAI access:
+
+#### Standard OpenAI
+```bash
+export OPENAI_API_KEY=your_openai_api_key_here
+```
+
+#### Azure OpenAI
+```bash
+export OPENAI_API_KEY=your_azure_openai_api_key
+export OPENAI_API_BASE=https://your-resource.openai.azure.com/
+export OPENAI_API_VERSION=2024-02-15-preview
+export OPENAI_API_TYPE=azure
+```
+
+### Docker Environment Configuration
+Update your `docker-compose.yml` to include OpenAI configuration:
+
+```yaml
+environment:
+  - OPENAI_API_KEY=your_api_key_here
+  - OPENAI_API_BASE=https://your-resource.openai.azure.com/  # For Azure OpenAI
+  - OPENAI_API_VERSION=2024-02-15-preview                    # For Azure OpenAI  
+  - OPENAI_API_TYPE=azure                                    # For Azure OpenAI
+```
+
+Or run with Docker directly:
+```bash
+docker run -d -p 8080:8080 \
+  -e OPENAI_API_KEY=your_api_key \
+  -e OPENAI_API_BASE=https://your-resource.openai.azure.com/ \
+  -e OPENAI_API_VERSION=2024-02-15-preview \
+  -e OPENAI_API_TYPE=azure \
+  timecraft-api
+```
 
 ### Volumes
 - `/app/data` - Data storage directory
