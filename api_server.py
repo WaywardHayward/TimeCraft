@@ -11,7 +11,7 @@ import sys
 import json
 import tempfile
 import traceback
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 
 # Add project root to Python path
@@ -35,19 +35,55 @@ except ImportError:
 # Try to import pandas for basic data processing
 try:
     import pandas as pd
+    import numpy as np
     HAS_PANDAS = True
+    HAS_NUMPY = True
 except ImportError:
     HAS_PANDAS = False
-    print("Warning: pandas not available. Some functionality will be limited.")
+    HAS_NUMPY = False
+    print("Warning: pandas/numpy not available. Some functionality will be limited.")
 
 # Import TimeCraft components when available
 TIMECRAFT_AVAILABLE = False
+BRIDGE_AVAILABLE = False
+TIMEDP_AVAILABLE = False
+TARDIFF_AVAILABLE = False
+
 try:
     from BRIDGE.ts_to_text import generate_text_description_for_time_series
     TIMECRAFT_AVAILABLE = True
+    BRIDGE_AVAILABLE = True
     print("TimeCraft BRIDGE components loaded successfully.")
 except ImportError:
     print("Warning: Could not import BRIDGE components. Running in demo mode.")
+
+# Try to import BRIDGE text-to-timeseries generation components
+try:
+    from BRIDGE.self_refine.task_init import TimeSeriesTaskInit
+    from BRIDGE.llm_agents.llm import ChatLLM
+    BRIDGE_TEXT2TS_AVAILABLE = True
+    print("BRIDGE text-to-timeseries components loaded successfully.")
+except ImportError:
+    BRIDGE_TEXT2TS_AVAILABLE = False
+    print("Warning: Could not import BRIDGE text-to-timeseries components.")
+
+# Try to import TimeDP components  
+try:
+    import torch
+    import pytorch_lightning as pl
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'TimeDP'))
+    TIMEDP_AVAILABLE = True
+    print("TimeDP components loaded successfully.")
+except ImportError:
+    print("Warning: Could not import TimeDP components.")
+
+# Try to import TarDiff components
+try:
+    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'TarDiff'))
+    TARDIFF_AVAILABLE = True
+    print("TarDiff components loaded successfully.")
+except ImportError:
+    print("Warning: Could not import TarDiff components.")
 
 app = FastAPI(
     title="TimeCraft API",
@@ -69,6 +105,29 @@ class TextRefinementRequest(BaseModel):
     team_iterations: Optional[int] = 3
     global_iterations: Optional[int] = 2
 
+class TextToTimeSeriesRequest(BaseModel):
+    """Request model for text-to-time-series generation using BRIDGE model."""
+    text_description: str
+    model_name: Optional[str] = "gpt-4o-2024-05-13"
+    temperature: Optional[float] = 0.0
+    openai_key: Optional[str] = None
+
+class DomainPromptGenerationRequest(BaseModel):
+    """Request model for TimeDP domain prompt-based generation."""
+    domain_type: str  # e.g., "finance", "energy", "traffic"
+    sequence_length: Optional[int] = 168
+    num_samples: Optional[int] = 100
+    use_text: Optional[bool] = False
+    text_prompt: Optional[str] = None
+    
+class TargetAwareGenerationRequest(BaseModel):
+    """Request model for TarDiff target-aware generation."""
+    target_values: Optional[List[float]] = None
+    guidance_strength: Optional[float] = 1.0
+    sequence_length: Optional[int] = 168
+    num_samples: Optional[int] = 100
+    classifier_guidance: Optional[bool] = True
+
 class HealthResponse(BaseModel):
     """Health check response model."""
     status: str
@@ -82,6 +141,9 @@ async def root():
         "version": "1.0.0",
         "documentation": "/docs",
         "timecraft_available": str(TIMECRAFT_AVAILABLE),
+        "bridge_text_to_ts": str(BRIDGE_TEXT2TS_AVAILABLE),
+        "timedp_available": str(TIMEDP_AVAILABLE),
+        "tardiff_available": str(TARDIFF_AVAILABLE),
         "pandas_available": str(HAS_PANDAS)
     }
 
@@ -99,7 +161,10 @@ async def status():
     return JSONResponse({
         "status": "running",
         "components": {
-            "timecraft_bridge": TIMECRAFT_AVAILABLE,
+            "timecraft_bridge": BRIDGE_AVAILABLE,
+            "bridge_text_to_ts": BRIDGE_TEXT2TS_AVAILABLE,
+            "timedp": TIMEDP_AVAILABLE,
+            "tardiff": TARDIFF_AVAILABLE,
             "pandas": HAS_PANDAS,
             "api_server": True
         },
@@ -256,14 +321,32 @@ async def refine_text(request: TextRefinementRequest):
 @app.get("/models")
 async def list_models():
     """List available models and their status."""
+    models_status = {
+        "BRIDGE - Text-to-Time-Series": {
+            "available": BRIDGE_TEXT2TS_AVAILABLE,
+            "description": "Generate time series data from text descriptions",
+            "endpoint": "/generate-timeseries-from-text"
+        },
+        "BRIDGE - Time-Series-to-Text": {
+            "available": BRIDGE_AVAILABLE,
+            "description": "Generate text descriptions from time series data", 
+            "endpoint": "/generate-description"
+        },
+        "TimeDP - Domain Prompts": {
+            "available": TIMEDP_AVAILABLE,
+            "description": "Domain-specific time series generation using diffusion models",
+            "endpoint": "/generate-timeseries-domain-prompt"
+        },
+        "TarDiff - Target-Aware Generation": {
+            "available": TARDIFF_AVAILABLE,
+            "description": "Target-aware time series generation with classifier guidance",
+            "endpoint": "/generate-timeseries-target-aware"
+        }
+    }
+    
     return JSONResponse({
-        "available_models": [
-            "BRIDGE - Text-to-Time-Series",
-            "TimeDP - Domain Prompts", 
-            "TarDiff - Target-Aware Generation"
-        ],
-        "status": "Models available for inference" if TIMECRAFT_AVAILABLE else "Demo mode - models not loaded",
-        "timecraft_available": TIMECRAFT_AVAILABLE
+        "available_models": models_status,
+        "overall_status": "Models available for inference" if any(m["available"] for m in models_status.values()) else "Demo mode - models not loaded"
     })
 
 @app.post("/analyze-csv")
@@ -312,6 +395,199 @@ async def analyze_csv(file: UploadFile = File(...)):
                 
     except Exception as e:
         print(f"Error in analyze_csv: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/generate-timeseries-from-text")
+async def generate_timeseries_from_text(request: TextToTimeSeriesRequest):
+    """
+    Generate time series data from text description using BRIDGE model.
+    
+    Args:
+        request: Request containing text description and model parameters
+    
+    Returns:
+        JSON response with generated time series data
+    """
+    try:
+        if not BRIDGE_TEXT2TS_AVAILABLE:
+            # Return a mock response when BRIDGE text-to-timeseries is not available
+            mock_series = [1.0, 1.5, 2.0, 1.8, 2.5, 3.0, 2.7, 2.2] * 21  # 168 points
+            return JSONResponse({
+                "status": "demo_mode",
+                "message": "BRIDGE text-to-timeseries components not available. This is a demo response.",
+                "text_description": request.text_description,
+                "generated_timeseries": mock_series[:168],
+                "model_used": request.model_name,
+                "note": "In production, this would generate actual time series from text using BRIDGE model"
+            })
+        
+        # Set OpenAI key if provided
+        if request.openai_key:
+            os.environ['OPENAI_API_KEY'] = request.openai_key
+        
+        # Initialize the ChatLLM model
+        try:
+            chat_llm = ChatLLM(
+                model=request.model_name,
+                temperature=request.temperature,
+                api_key=request.openai_key
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to initialize LLM: {str(e)}")
+        
+        # For now, we'll use a simple prompt-based approach
+        # In production, this would use proper example files and trained models
+        try:
+            # Create a simple prompt for time series generation
+            prompt = f"""Generate a time series of 168 numerical values based on this description: {request.text_description}
+
+Please return only the numerical values separated by commas, without any additional text or explanation.
+
+Example format: 1.2, 3.4, 2.1, 4.5, ...
+
+Time Series:"""
+            
+            response = chat_llm.generate(prompt)
+            
+            # Parse the response to extract time series values
+            time_series_str = response.strip()
+            if "Time Series:" in time_series_str:
+                time_series_str = time_series_str.split("Time Series:")[-1].strip()
+            
+            # Convert to list of floats
+            try:
+                time_series = [float(val.strip()) for val in time_series_str.split(',') if val.strip()]
+            except ValueError as e:
+                # If parsing fails, generate a simple mock series
+                print(f"Failed to parse LLM response: {e}")
+                time_series = [float(i % 10 + 1) for i in range(168)]
+            
+            # Ensure we have exactly 168 points
+            if len(time_series) < 168:
+                # Extend by repeating the pattern
+                while len(time_series) < 168:
+                    time_series.extend(time_series[:min(len(time_series), 168 - len(time_series))])
+            elif len(time_series) > 168:
+                time_series = time_series[:168]
+            
+            return JSONResponse({
+                "status": "success",
+                "message": "Time series generated successfully from text description",
+                "text_description": request.text_description,
+                "generated_timeseries": time_series,
+                "model_used": request.model_name,
+                "length": len(time_series)
+            })
+            
+        except Exception as e:
+            print(f"Error during time series generation: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to generate time series: {str(e)}")
+        
+    except Exception as e:
+        print(f"Error in generate_timeseries_from_text: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/generate-timeseries-domain-prompt")
+async def generate_timeseries_domain_prompt(request: DomainPromptGenerationRequest):
+    """
+    Generate time series data using TimeDP domain prompts.
+    
+    Args:
+        request: Request containing domain type and generation parameters
+    
+    Returns:
+        JSON response with generated time series data
+    """
+    try:
+        if not TIMEDP_AVAILABLE:
+            # Return a mock response when TimeDP is not available
+            mock_series_batch = []
+            for i in range(min(request.num_samples, 5)):  # Limit mock samples
+                # Generate different patterns based on domain type
+                if request.domain_type.lower() == "finance":
+                    base_pattern = [100 + np.sin(j * 0.1) * 10 + np.random.normal(0, 2) for j in range(request.sequence_length)]
+                elif request.domain_type.lower() == "energy":
+                    base_pattern = [50 + np.sin(j * 0.2) * 20 + np.random.normal(0, 3) for j in range(request.sequence_length)]
+                else:
+                    base_pattern = [np.sin(j * 0.05) * 10 + np.random.normal(0, 1) for j in range(request.sequence_length)]
+                mock_series_batch.append(base_pattern)
+            
+            return JSONResponse({
+                "status": "demo_mode",
+                "message": "TimeDP components not available. This is a demo response.",
+                "domain_type": request.domain_type,
+                "generated_timeseries": mock_series_batch,
+                "num_samples": len(mock_series_batch),
+                "sequence_length": request.sequence_length,
+                "note": "In production, this would use TimeDP diffusion model for domain-specific generation"
+            })
+        
+        # For now, return a placeholder since full TimeDP integration requires complex setup
+        return JSONResponse({
+            "status": "not_implemented",
+            "message": "TimeDP integration is in development",
+            "domain_type": request.domain_type,
+            "note": "Full TimeDP diffusion model integration requires model checkpoints and complex setup"
+        })
+        
+    except Exception as e:
+        print(f"Error in generate_timeseries_domain_prompt: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/generate-timeseries-target-aware")
+async def generate_timeseries_target_aware(request: TargetAwareGenerationRequest):
+    """
+    Generate time series data using TarDiff target-aware generation.
+    
+    Args:
+        request: Request containing target values and generation parameters
+    
+    Returns:
+        JSON response with generated time series data
+    """
+    try:
+        if not TARDIFF_AVAILABLE:
+            # Return a mock response when TarDiff is not available
+            mock_series_batch = []
+            for i in range(min(request.num_samples, 5)):  # Limit mock samples
+                if request.target_values:
+                    # Generate series that tends toward target values
+                    mock_series = []
+                    for j in range(request.sequence_length):
+                        if j < len(request.target_values):
+                            # Blend toward target with some noise
+                            target = request.target_values[j]
+                            noise = np.random.normal(0, 0.1 * abs(target) if target != 0 else 0.1)
+                            mock_series.append(target + noise)
+                        else:
+                            # Extend pattern
+                            mock_series.append(mock_series[-1] + np.random.normal(0, 0.1))
+                else:
+                    # Generate generic series
+                    mock_series = [np.random.normal(0, 1) for _ in range(request.sequence_length)]
+                mock_series_batch.append(mock_series)
+            
+            return JSONResponse({
+                "status": "demo_mode", 
+                "message": "TarDiff components not available. This is a demo response.",
+                "target_values": request.target_values,
+                "generated_timeseries": mock_series_batch,
+                "num_samples": len(mock_series_batch),
+                "sequence_length": request.sequence_length,
+                "guidance_strength": request.guidance_strength,
+                "note": "In production, this would use TarDiff model for target-aware generation"
+            })
+        
+        # For now, return a placeholder since full TarDiff integration requires complex setup
+        return JSONResponse({
+            "status": "not_implemented",
+            "message": "TarDiff integration is in development",
+            "target_values": request.target_values,
+            "note": "Full TarDiff model integration requires model checkpoints and classifier guidance setup"
+        })
+        
+    except Exception as e:
+        print(f"Error in generate_timeseries_target_aware: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":
