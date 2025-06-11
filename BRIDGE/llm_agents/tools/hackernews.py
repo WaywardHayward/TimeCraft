@@ -3,7 +3,7 @@
 
 import requests
 from bs4 import BeautifulSoup
-from llm_agents.tools.base import ToolInterface
+from .base import ToolInterface
 
 
 ENDPOINT = "***"

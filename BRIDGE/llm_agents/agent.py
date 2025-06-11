@@ -6,9 +6,9 @@ import re
 
 from pydantic import BaseModel
 from typing import List, Dict, Tuple
-from llm_agents.llm import ChatLLM
-from llm_agents.tools.base import ToolInterface
-from llm_agents.tools.python_repl import PythonREPLTool
+from .llm import ChatLLM
+from .tools.base import ToolInterface
+from .tools.python_repl import PythonREPLTool
 
 
 FINAL_ANSWER_TOKEN = "Final Answer:"

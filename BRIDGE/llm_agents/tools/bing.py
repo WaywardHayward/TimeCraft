@@ -3,7 +3,7 @@
 
 import os
 from typing import Any, Dict, List
-from llm_agents.tools.base import ToolInterface
+from .base import ToolInterface
 import requests
 
 
