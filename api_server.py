@@ -114,12 +114,10 @@ class TimeSeriesGenerationRequest(BaseModel):
     dataset_name: str
     prediction_length: Optional[int] = 168
     llm_optimize: Optional[bool] = False
-    openai_key: Optional[str] = None
 
 class TextRefinementRequest(BaseModel):
     """Request model for text refinement."""
     initial_text: str
-    openai_key: Optional[str] = None
     openai_api_base: Optional[str] = None
     openai_api_version: Optional[str] = None
     openai_api_type: Optional[str] = None
@@ -131,7 +129,6 @@ class TextToTimeSeriesRequest(BaseModel):
     text_description: str
     model_name: Optional[str] = "gpt-4o-2024-05-13"
     temperature: Optional[float] = 0.0
-    openai_key: Optional[str] = None
     openai_api_base: Optional[str] = None
     openai_api_version: Optional[str] = None
     openai_api_type: Optional[str] = None
@@ -159,7 +156,6 @@ class AggregateTimeSeriesRequest(BaseModel):
     sequence_length: Optional[int] = 168
     model_name: Optional[str] = "gpt-4o-2024-05-13"
     temperature: Optional[float] = 0.0
-    openai_key: Optional[str] = None
     openai_api_base: Optional[str] = None
     openai_api_version: Optional[str] = None
     openai_api_type: Optional[str] = None
@@ -209,7 +205,7 @@ async def status():
             "python_path": os.environ.get('PYTHONPATH', ''),
             "openai_api_key_set": bool(os.environ.get('OPENAI_API_KEY')),
             "openai_api_base": os.environ.get('OPENAI_API_BASE', 'default'),
-            "openai_api_version": os.environ.get('OPENAI_API_VERSIONOPENAI_API_VERSION', 'default'),
+            "openai_api_version": os.environ.get('OPENAI_API_VERSION', 'default'),
             "openai_api_type": os.environ.get('OPENAI_API_TYPE', 'openai')
         }
     })
@@ -220,7 +216,6 @@ async def generate_description(
     dataset_name: str = "uploaded_dataset",
     prediction_length: int = 168,
     llm_optimize: bool = False,
-    openai_key: Optional[str] = None,
     openai_api_base: Optional[str] = None,
     openai_api_version: Optional[str] = None,
     openai_api_type: Optional[str] = None
@@ -233,7 +228,6 @@ async def generate_description(
         dataset_name: Name/ID of the dataset
         prediction_length: Prediction length for time series windows
         llm_optimize: Whether to use LLM to optimize text descriptions
-        openai_key: OpenAI API key (optional, can be set via environment)
         openai_api_base: OpenAI API base URL (for Azure OpenAI support)
         openai_api_version: OpenAI API version (for Azure OpenAI support)
         openai_api_type: OpenAI API type (for Azure OpenAI support)
@@ -266,8 +260,6 @@ async def generate_description(
         
         try:
             # Set OpenAI configuration if provided
-            if openai_key:
-                os.environ['OPENAI_API_KEY'] = openai_key
             if openai_api_base:
                 os.environ['OPENAI_API_BASE'] = openai_api_base
             if openai_api_version:
@@ -281,7 +273,7 @@ async def generate_description(
                 prediction_length=prediction_length,
                 dataset_name=dataset_name,
                 llm_optimize=llm_optimize,
-                llm_api_key=openai_key
+                llm_api_key=os.environ.get('OPENAI_API_KEY')
             )
             
             # Check if output file was created
@@ -334,8 +326,6 @@ async def refine_text(request: TextRefinementRequest):
     """
     try:
         # Set OpenAI configuration if provided
-        if request.openai_key:
-            os.environ['OPENAI_API_KEY'] = request.openai_key
         if request.openai_api_base:
             os.environ['OPENAI_API_BASE'] = request.openai_api_base
         if request.openai_api_version:
@@ -485,8 +475,6 @@ async def generate_timeseries_from_text(request: TextToTimeSeriesRequest):
             })
         
         # Set OpenAI configuration if provided
-        if request.openai_key:
-            os.environ['OPENAI_API_KEY'] = request.openai_key
         if request.openai_api_base:
             os.environ['OPENAI_API_BASE'] = request.openai_api_base
         if request.openai_api_version:
@@ -503,7 +491,6 @@ async def generate_timeseries_from_text(request: TextToTimeSeriesRequest):
             chat_llm = ChatLLM(
                 model=request.model_name,
                 temperature=request.temperature,
-                api_key=request.openai_key,
                 api_base=request.openai_api_base,
                 api_version=request.openai_api_version,
                 api_type=request.openai_api_type
@@ -682,8 +669,6 @@ async def generate_aggregate_timeseries(request: AggregateTimeSeriesRequest):
     """
     try:
         # Set OpenAI configuration if provided
-        if request.openai_key:
-            os.environ['OPENAI_API_KEY'] = request.openai_key
         if request.openai_api_base:
             os.environ['OPENAI_API_BASE'] = request.openai_api_base
         if request.openai_api_version:
@@ -716,7 +701,6 @@ async def generate_aggregate_timeseries(request: AggregateTimeSeriesRequest):
             chat_llm = ChatLLM(
                 model=request.model_name,
                 temperature=request.temperature,
-                api_key=request.openai_key,
                 api_base=request.openai_api_base,
                 api_version=request.openai_api_version,
                 api_type=request.openai_api_type

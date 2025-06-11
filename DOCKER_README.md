@@ -81,7 +81,7 @@ curl -X POST "http://localhost:8080/refine-text" \
   }'
 ```
 
-### Generate Time Series from Text (with Azure OpenAI)
+### Generate Time Series from Text
 ```bash
 curl -X POST "http://localhost:8080/generate-timeseries-from-text" \
   -H "accept: application/json" \
@@ -89,12 +89,13 @@ curl -X POST "http://localhost:8080/generate-timeseries-from-text" \
   -d '{
     "text_description": "Generate a weekly sales pattern with weekend peaks",
     "model_name": "gpt-4",
-    "openai_key": "your_azure_openai_key",
     "openai_api_base": "https://your-resource.openai.azure.com/",
     "openai_api_version": "2024-02-15-preview",
     "openai_api_type": "azure"
   }'
 ```
+
+**Note:** The OpenAI API key must be set as an environment variable `OPENAI_API_KEY` at deployment time for security reasons.
 
 ### Text Refinement with Azure OpenAI
 ```bash
@@ -119,6 +120,8 @@ curl -X POST "http://localhost:8080/refine-text" \
 - `PYTHONPATH` - Python module search path
 
 ### OpenAI Configuration
+**Security Note:** For security best practices, OpenAI API keys are configured exclusively through environment variables at deployment time. API keys cannot be passed via request parameters.
+
 For LLM-powered features, configure OpenAI access:
 
 #### Standard OpenAI

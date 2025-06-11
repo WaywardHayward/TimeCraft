@@ -8,11 +8,11 @@ services:
     environment:
       - DATA_ROOT=/app/data
       - PYTHONPATH=/app:/app/BRIDGE:/app/diffusion
-      # OpenAI Configuration (uncomment and set as needed)
-      # - OPENAI_API_KEY=your_openai_api_key_here
-      # - OPENAI_API_BASE=https://your-resource.openai.azure.com/  # For Azure OpenAI
-      # - OPENAI_API_VERSION=2024-02-15-preview                    # For Azure OpenAI
-      # - OPENAI_API_TYPE=azure                                    # For Azure OpenAI
+      # OpenAI Configuration (set these as needed at deploy time)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}  # Required for LLM functionality
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-}  # For Azure OpenAI: https://your-resource.openai.azure.com/
+      - OPENAI_API_VERSION=${OPENAI_API_VERSION:-}  # For Azure OpenAI: 2024-02-15-preview
+      - OPENAI_API_TYPE=${OPENAI_API_TYPE:-openai}  # For Azure OpenAI: azure
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
