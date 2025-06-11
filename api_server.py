@@ -151,6 +151,18 @@ class TargetAwareGenerationRequest(BaseModel):
     num_samples: Optional[int] = 100
     classifier_guidance: Optional[bool] = True
 
+class AggregateTimeSeriesRequest(BaseModel):
+    """Request model for aggregate multi-tag time series generation."""
+    text_description: str
+    num_tags: Optional[int] = 5
+    sequence_length: Optional[int] = 168
+    model_name: Optional[str] = "gpt-4o-2024-05-13"
+    temperature: Optional[float] = 0.0
+    openai_key: Optional[str] = None
+    openai_api_base: Optional[str] = None
+    openai_api_version: Optional[str] = None
+    openai_api_type: Optional[str] = None
+
 class HealthResponse(BaseModel):
     """Health check response model."""
     status: str
@@ -371,6 +383,11 @@ async def list_models():
             "available": BRIDGE_TEXT2TS_AVAILABLE,
             "description": "Generate time series data from text descriptions",
             "endpoint": "/generate-timeseries-from-text"
+        },
+        "BRIDGE - Aggregate Multi-Tag Generation": {
+            "available": BRIDGE_TEXT2TS_AVAILABLE,
+            "description": "Generate multiple time series for different tags from a single text description",
+            "endpoint": "/generate-aggregate-timeseries"
         },
         "BRIDGE - Time-Series-to-Text": {
             "available": BRIDGE_AVAILABLE,
@@ -646,6 +663,177 @@ async def generate_timeseries_target_aware(request: TargetAwareGenerationRequest
         
     except Exception as e:
         print(f"Error in generate_timeseries_target_aware: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/generate-aggregate-timeseries")
+async def generate_aggregate_timeseries(request: AggregateTimeSeriesRequest):
+    """
+    Generate multiple time series data for different tags based on a text description.
+    
+    This endpoint takes a text description, generates relevant tag names for that context,
+    and then generates a time series for each tag.
+    
+    Args:
+        request: Request containing text description and generation parameters
+    
+    Returns:
+        JSON response with generated time series data for multiple tags
+    """
+    try:
+        # Set OpenAI configuration if provided
+        if request.openai_key:
+            os.environ['OPENAI_API_KEY'] = request.openai_key
+        if request.openai_api_base:
+            os.environ['OPENAI_API_BASE'] = request.openai_api_base
+        if request.openai_api_version:
+            os.environ['OPENAI_API_VERSION'] = request.openai_api_version
+        if request.openai_api_type:
+            os.environ['OPENAI_API_TYPE'] = request.openai_api_type
+
+        if not BRIDGE_TEXT2TS_AVAILABLE:
+            # Return a mock response when BRIDGE text-to-timeseries is not available
+            mock_tags = {}
+            tag_names = [f"tag{i+1}" for i in range(request.num_tags)]
+            
+            for i, tag_name in enumerate(tag_names):
+                # Generate different patterns for each tag
+                base_value = (i + 1) * 10
+                mock_series = [base_value + np.sin(j * 0.1 + i) * 5 + np.random.normal(0, 1) 
+                              for j in range(request.sequence_length)]
+                mock_tags[tag_name] = mock_series
+            
+            return JSONResponse({
+                "status": "demo_mode",
+                "message": "BRIDGE text-to-timeseries components not available. This is a demo response.",
+                "text_description": request.text_description,
+                "generated_timeseries": mock_tags,
+                "note": "In production, this would generate actual tags and time series from text using BRIDGE model"
+            })
+
+        # Initialize the ChatLLM model
+        try:
+            chat_llm = ChatLLM(
+                model=request.model_name,
+                temperature=request.temperature,
+                api_key=request.openai_key,
+                api_base=request.openai_api_base,
+                api_version=request.openai_api_version,
+                api_type=request.openai_api_type
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to initialize LLM: {str(e)}")
+
+        print(f"Generating aggregate time series from description: {request.text_description}")
+        print(f"Using model: {request.model_name}, Target tags: {request.num_tags}")
+
+        # Step 1: Generate relevant tag names based on the text description
+        tag_generation_prompt = f"""Based on the following description, generate {request.num_tags} relevant tag names that would be measured or tracked in this context:
+
+Description: {request.text_description}
+
+Please return only the tag names, one per line, without any additional text or explanation.
+The tag names should be concise, descriptive, and relevant to the scenario described.
+
+Example format:
+TemperatureSensor1
+PressureReading
+FlowRate
+PowerConsumption
+ErrorCount
+
+Tag names:"""
+
+        try:
+            tag_response = chat_llm.generate(tag_generation_prompt)
+            tag_lines = [line.strip() for line in tag_response.strip().split('\n') if line.strip()]
+            
+            # Clean up tag names and ensure we have the right number
+            tag_names = []
+            for line in tag_lines:
+                # Remove any numbering or bullet points
+                clean_tag = line.replace('-', '').replace('*', '').replace('1.', '').replace('2.', '').replace('3.', '').replace('4.', '').replace('5.', '').strip()
+                if clean_tag and len(clean_tag) > 0:
+                    tag_names.append(clean_tag)
+            
+            # Ensure we have the requested number of tags
+            if len(tag_names) < request.num_tags:
+                # Fill with generic names if needed
+                for i in range(len(tag_names), request.num_tags):
+                    tag_names.append(f"Tag{i+1}")
+            elif len(tag_names) > request.num_tags:
+                tag_names = tag_names[:request.num_tags]
+                
+        except Exception as e:
+            print(f"Failed to generate tag names: {e}")
+            # Fall back to generic tag names
+            tag_names = [f"Tag{i+1}" for i in range(request.num_tags)]
+
+        print(f"Generated tag names: {tag_names}")
+
+        # Step 2: Generate time series for each tag
+        generated_timeseries = {}
+        
+        for tag_name in tag_names:
+            try:
+                # Create specific prompt for this tag
+                tag_specific_prompt = f"""Generate a time series of {request.sequence_length} numerical values for the tag "{tag_name}" in the context of: {request.text_description}
+
+The values should be realistic for this specific measurement/sensor in the given scenario.
+
+Please return only the numerical values separated by commas, without any additional text or explanation.
+
+Example format: 1.2, 3.4, 2.1, 4.5, ...
+
+Time Series for {tag_name}:"""
+
+                response = chat_llm.generate(tag_specific_prompt)
+                
+                # Parse the response to extract time series values
+                time_series_str = response.strip()
+                if f"Time Series for {tag_name}:" in time_series_str:
+                    time_series_str = time_series_str.split(f"Time Series for {tag_name}:")[-1].strip()
+                elif "Time Series:" in time_series_str:
+                    time_series_str = time_series_str.split("Time Series:")[-1].strip()
+                
+                # Convert to list of floats
+                try:
+                    time_series = [float(val.strip()) for val in time_series_str.split(',') if val.strip()]
+                except ValueError as e:
+                    print(f"Failed to parse LLM response for {tag_name}: {e}")
+                    # Generate a simple pattern based on tag position
+                    tag_index = tag_names.index(tag_name)
+                    base_value = (tag_index + 1) * 10
+                    time_series = [base_value + np.sin(i * 0.1) * 5 + np.random.normal(0, 1) 
+                                  for i in range(request.sequence_length)]
+                
+                # Ensure we have exactly the requested length
+                if len(time_series) < request.sequence_length:
+                    # Extend by repeating the pattern
+                    while len(time_series) < request.sequence_length:
+                        time_series.extend(time_series[:min(len(time_series), request.sequence_length - len(time_series))])
+                elif len(time_series) > request.sequence_length:
+                    time_series = time_series[:request.sequence_length]
+                
+                generated_timeseries[tag_name] = time_series
+                
+            except Exception as e:
+                print(f"Error generating time series for tag {tag_name}: {e}")
+                # Generate fallback series
+                tag_index = tag_names.index(tag_name)
+                base_value = (tag_index + 1) * 10
+                fallback_series = [base_value + np.sin(i * 0.1) * 5 + np.random.normal(0, 1) 
+                                  for i in range(request.sequence_length)]
+                generated_timeseries[tag_name] = fallback_series
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Time series generated successfully from text description",
+            "text_description": request.text_description,
+            "generated_timeseries": generated_timeseries
+        })
+
+    except Exception as e:
+        print(f"Error in generate_aggregate_timeseries: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":
