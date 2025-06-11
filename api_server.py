@@ -105,7 +105,8 @@ except ImportError:
 app = FastAPI(
     title="TimeCraft API",
     description="REST API for TimeCraft time series generation framework",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url="/swagger"
 )
 
 class TimeSeriesGenerationRequest(BaseModel):
@@ -174,7 +175,7 @@ async def root():
     return {
         "message": "TimeCraft REST API",
         "version": "1.0.0",
-        "documentation": "/docs",
+        "documentation": "/swagger",
         "timecraft_available": str(TIMECRAFT_AVAILABLE),
         "bridge_text_to_ts": str(BRIDGE_TEXT2TS_AVAILABLE),
         "timedp_available": str(TIMEDP_AVAILABLE),
