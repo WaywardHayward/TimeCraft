@@ -4,7 +4,7 @@
 import os
 from typing import Any
 
-from llm_agents.tools.base import ToolInterface
+from .base import ToolInterface
 import wikipedia
 
 

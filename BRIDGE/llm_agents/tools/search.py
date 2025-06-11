@@ -7,7 +7,7 @@ import os
 import sys
 from typing import Any
 
-from llm_agents.tools.base import ToolInterface
+from .base import ToolInterface
 
 def search(query: str) -> str:
     # Placeholder implementation.
@@ -86,3 +86,7 @@ class AzureSearchTool(ToolInterface):
 
     def use(self, input_text: str) -> str:
         return search(input_text)
+
+
+# Alias for backward compatibility
+SerpAPITool = AzureSearchTool

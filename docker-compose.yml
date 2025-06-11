@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  timecraft-api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DATA_ROOT=/app/data
+      - PYTHONPATH=/app:/app/BRIDGE:/app/diffusion
+      # OpenAI Configuration (set these as needed at deploy time)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}  # Required for LLM functionality
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-}  # For Azure OpenAI: https://your-resource.openai.azure.com/
+      - OPENAI_API_VERSION=${OPENAI_API_VERSION:-}  # For Azure OpenAI: 2024-02-15-preview
+      - OPENAI_API_TYPE=${OPENAI_API_TYPE:-openai}  # For Azure OpenAI: azure
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

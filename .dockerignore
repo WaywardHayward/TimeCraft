@@ -1,0 +1,79 @@
+# Git and version control
+.git
+.gitignore
+.github
+
+# Python cache and temporary files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+logs/
+checkpoints/
+outputs/
+results/
+wandb/
+mlruns/
+
+# Documentation and figures (not needed for runtime)
+figures/
+supplementary/
+*.md
+LICENSE
+SECURITY.md
+CODE_OF_CONDUCT.md
+
+# Large data files that shouldn't be in container
+*.pkl
+*.h5
+*.hdf5
+data/
+datasets/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

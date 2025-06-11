@@ -6,7 +6,7 @@ from io import StringIO
 from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
-from llm_agents.tools.base import ToolInterface
+from .base import ToolInterface
 
 
 # Taken from https://github.com/hwchase17/langchain/blob/master/langchain/python.py
