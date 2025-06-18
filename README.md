@@ -242,5 +242,194 @@ trademarks or logos is subject to and must follow
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
 
+# TimeCraft Demo API
+
+A demonstration API for generating synthetic time series data from text descriptions.
+
+## Quick Start
+
+1. Start the API Server:
+```bash
+# Navigate to the project directory
+cd C:\VSCode\timecraft\TimeCraft
+
+# Start the API server using Docker
+docker-compose up --build
+```
+
+2. Start the Web UI Server (in a new terminal):
+```bash
+# Navigate to the project directory
+cd C:\VSCode\timecraft\TimeCraft
+
+# Start the web server
+python serve.py
+```
+
+3. Access the Web Interface:
+- The UI will automatically open in your default browser
+- Or manually visit: http://localhost:8000/scenario-timeseries.html
+
+## Detailed Setup Instructions
+
+### Prerequisites
+- Docker Desktop installed and running
+- Python 3.8 or higher
+- Web browser (Chrome, Firefox, or Edge recommended)
+
+### Starting the API Server
+
+1. Make sure Docker Desktop is running
+2. Open a terminal and navigate to the project directory:
+```bash
+cd C:\VSCode\timecraft\TimeCraft
+```
+
+3. Start the API server:
+```bash
+docker-compose up --build
+```
+
+4. Verify the API is running:
+- Open http://localhost:8080/health in your browser
+- You should see a "healthy" status message
+
+### Starting the Web Interface
+
+1. Open a new terminal window
+2. Navigate to the project directory:
+```bash
+cd C:\VSCode\timecraft\TimeCraft
+```
+
+3. Start the web server:
+```bash
+python serve.py
+```
+
+4. The web interface will automatically open in your default browser
+   - If it doesn't, manually visit: http://localhost:8000/scenario-timeseries.html
+
+### Using the Web Interface
+
+1. Enter a scenario description (example: "A factory with temperature and pressure sensors")
+2. Set the number of tags (1-100)
+3. Choose the data points (24 hours, 48 hours, 1 week, or 1 month)
+4. Click "Generate Time Series"
+5. View the generated data in the charts
+6. Use the "Export CSV" button to download the data
+
+### Stopping the Servers
+
+1. Stop the API Server:
+   - Press Ctrl+C in the API server terminal
+   - Or run: `docker-compose down`
+
+2. Stop the Web Server:
+   - Press Ctrl+C in the web server terminal
+
+## Troubleshooting
+
+### API Server Issues
+
+1. If the API isn't responding:
+```bash
+# Check if the container is running
+docker ps
+
+# If not running, try:
+docker-compose down
+docker system prune -f
+docker-compose up --build
+```
+
+2. Check API health:
+- Visit http://localhost:8080/health
+- Should return: `{"status": "healthy", "message": "TimeCraft API is running (Demo Mode)"}`
+
+### Web Interface Issues
+
+1. If you see "API server not available":
+- Make sure the API server is running (check http://localhost:8080/health)
+- Ensure Docker Desktop is running
+- Try restarting both servers
+
+2. If the web interface doesn't load:
+- Check that you're using http://localhost:8000/scenario-timeseries.html
+- Make sure the Python web server is running
+- Try restarting the web server
+
+### Port Conflicts
+
+If you see port in use errors:
+1. For API server (port 8080):
+```bash
+# Find and stop processes using port 8080
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+```
+
+2. For web server (port 8000):
+```bash
+# Find and stop processes using port 8000
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+```
+
+## Project Structure
+
+```
+TimeCraft/
+├── api_server.py      # Main API server implementation
+├── serve.py           # Development web server for UI
+├── Dockerfile         # Container configuration
+├── docker-compose.yml # Docker services configuration
+└── scenario-timeseries.html # Web interface
+```
+
+## Development Notes
+
+- The API runs in demo mode, generating synthetic data
+- Generated data includes realistic patterns for different sensor types:
+  - Temperature: Sine waves with noise
+  - Pressure: Linear trends with noise
+  - Generic sensors: Random walks
+- All data includes appropriate noise and variation for realism
+- The web interface automatically updates charts in real-time
+- Data can be exported to CSV for further analysis
+
+## API Documentation
+
+### Endpoints
+
+1. Health Check
+```
+GET /health
+Response: {
+    "status": "healthy",
+    "message": "TimeCraft API is running (Demo Mode)"
+}
+```
+
+2. Generate Time Series
+```
+POST /generate-aggregate-timeseries
+Request Body: {
+    "text_description": "String description of scenario",
+    "num_tags": number (default: 5),
+    "sequence_length": number (default: 168)
+}
+Response: {
+    "status": "success",
+    "text_description": string,
+    "tags": string[],
+    "sequence_length": number,
+    "aggregate_timeseries": {
+        [tagName: string]: number[]
+    },
+    "timestamp": string
+}
+```
+
 
 
