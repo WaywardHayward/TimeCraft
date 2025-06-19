@@ -109,21 +109,17 @@
                 </div>
             </div>
             
-            <!-- Generation Mode Toggle -->
+            <!-- Progressive Mode Toggle -->
             <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-medium text-blue-800">Generation Mode</h3>
-                        <p class="text-xs text-blue-600 mt-1">Choose how the timeseries should be generated</p>
+                        <h3 class="text-sm font-medium text-blue-800">Progressive Generation</h3>
+                        <p class="text-xs text-blue-600 mt-1">Enable progressive generation with real-time progress bar and chart updates</p>
                     </div>
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
                         <label class="flex items-center">
-                            <input type="radio" name="generationMode" value="progressive" checked class="mr-2">
-                            <span class="text-sm text-blue-700">Progressive (with progress bar)</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="generationMode" value="traditional" class="mr-2">
-                            <span class="text-sm text-blue-700">Traditional (single call)</span>
+                            <input type="checkbox" id="progressiveMode" checked class="mr-3 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                            <span class="text-sm text-blue-700 font-medium">Enable Progressive Mode</span>
                         </label>
                     </div>
                 </div>
@@ -317,9 +313,9 @@
 
         // Main generation function that chooses between progressive and traditional modes
         function generateTimeSeriesMain() {
-            const generationMode = document.querySelector('input[name="generationMode"]:checked').value;
+            const progressiveMode = document.getElementById('progressiveMode').checked;
             
-            if (generationMode === 'progressive') {
+            if (progressiveMode) {
                 generateTimeSeriesProgressive();
             } else {
                 generateTimeSeries();
