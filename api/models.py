@@ -63,6 +63,45 @@ class AggregateTimeSeriesRequest(BaseModel):
     openai_api_type: Optional[str] = None
 
 
+class TagGenerationRequest(BaseModel):
+    """Request model for tag name generation."""
+    text_description: str
+    num_tags: Optional[int] = 5
+    model_name: Optional[str] = "gpt-4o"
+    temperature: Optional[float] = 0.0
+
+
+class TagGenerationResponse(BaseModel):
+    """Response model for tag name generation."""
+    status: str
+    message: str
+    text_description: str
+    num_tags: int
+    tags: List[str]
+    generation_method: str
+
+
+class SingleTimeSeriesRequest(BaseModel):
+    """Request model for single timeseries generation."""
+    tag_name: str
+    text_description: str
+    sequence_length: Optional[int] = 168
+    tag_index: Optional[int] = 0
+    model_name: Optional[str] = "gpt-4o"
+    temperature: Optional[float] = 0.0
+
+
+class SingleTimeSeriesResponse(BaseModel):
+    """Response model for single timeseries generation."""
+    status: str
+    message: str
+    tag_name: str
+    text_description: str
+    sequence_length: int
+    timeseries: List[float]
+    generation_method: str
+
+
 class HealthResponse(BaseModel):
     """Health check response model."""
     status: str
