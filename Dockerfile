@@ -37,7 +37,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt && \
     pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r bridge_requirements.txt
 
-# Copy application files
+# Copy application files (including HTML UI)
+# Note: To include latest UI changes, ensure you rebuild the image after making changes
 COPY --chown=root:root . .
 
 # Create a non-root user for security
