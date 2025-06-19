@@ -325,14 +325,15 @@
             })
             .then(data => {
                 // Transform API response to match our existing data structure
+                // Handle cases where response might not have all expected fields
                 currentData = {
-                    scenario: data.text_description,
-                    tagNames: data.tags,
-                    length: data.sequence_length,
+                    scenario: data.text_description || 'Unknown scenario',
+                    tagNames: data.tags || [],
+                    length: data.sequence_length || 0,
                     frequency: frequency,
-                    timeSeries: data.aggregate_timeseries,
+                    timeSeries: data.aggregate_timeseries || {},
                     timestamp: new Date().toISOString(),
-                    apiStatus: data.status,
+                    apiStatus: data.status || 'unknown',
                     apiMessage: data.message || null
                 };
                 
@@ -355,8 +356,12 @@
             // Show results section
             document.getElementById('resultsSection').classList.remove('hidden');
 
-            // Update generation info
-            let infoText = `${currentData.tagNames.length} tags, ${currentData.length} points (${currentData.frequency})`;
+            // Update generation info - handle cases where tagNames might be undefined
+            const tagCount = currentData.tagNames ? currentData.tagNames.length : 0;
+            const length = currentData.length || 0;
+            const frequency = currentData.frequency || 'unknown';
+            
+            let infoText = `${tagCount} tags, ${length} points (${frequency})`;
             if (currentData.apiStatus && currentData.apiStatus === 'demo_mode') {
                 infoText += ' - Demo Mode';
             }
@@ -479,12 +484,19 @@
 
         function displayDataPreview() {
             const preview = document.getElementById('dataPreview');
+            
+            // Handle case where tagNames might be undefined
+            if (!currentData.tagNames || !currentData.timeSeries) {
+                preview.textContent = 'No data available for preview';
+                return;
+            }
+            
             let previewText = 'Time\t' + currentData.tagNames.join('\t') + '\n';
             
             const maxPreviewRows = 10;
             for (let i = 0; i < Math.min(maxPreviewRows, currentData.length); i++) {
                 const row = [i + 1].concat(
-                    currentData.tagNames.map(tag => currentData.timeSeries[tag][i])
+                    currentData.tagNames.map(tag => currentData.timeSeries[tag] ? currentData.timeSeries[tag][i] : 'N/A')
                 );
                 previewText += row.join('\t') + '\n';
             }
@@ -498,13 +510,16 @@
         }
 
         function exportToCSV() {
-            if (!currentData) return;
+            if (!currentData || !currentData.tagNames || !currentData.timeSeries) {
+                alert('No data available for export');
+                return;
+            }
 
             let csvContent = 'Time,' + currentData.tagNames.join(',') + '\n';
             
             for (let i = 0; i < currentData.length; i++) {
                 const row = [i + 1].concat(
-                    currentData.tagNames.map(tag => currentData.timeSeries[tag][i])
+                    currentData.tagNames.map(tag => currentData.timeSeries[tag] ? currentData.timeSeries[tag][i] : 'N/A')
                 );
                 csvContent += row.join(',') + '\n';
             }
