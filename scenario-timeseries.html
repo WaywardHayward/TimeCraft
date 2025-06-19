@@ -49,7 +49,7 @@
                         <button 
                             id="generateBtn" 
                             class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            onclick="generateTimeSeriesProgressive()"
+                            onclick="generateTimeSeriesMain()"
                         >
                             Generate Time Series
                         </button>
@@ -106,6 +106,26 @@
                         <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
                     </select>
+                </div>
+            </div>
+            
+            <!-- Generation Mode Toggle -->
+            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-blue-800">Generation Mode</h3>
+                        <p class="text-xs text-blue-600 mt-1">Choose how the timeseries should be generated</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="generationMode" value="progressive" checked class="mr-2">
+                            <span class="text-sm text-blue-700">Progressive (with progress bar)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="generationMode" value="traditional" class="mr-2">
+                            <span class="text-sm text-blue-700">Traditional (single call)</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -293,6 +313,17 @@
                 timeSeries: timeSeriesData,
                 timestamp: new Date().toISOString()
             };
+        }
+
+        // Main generation function that chooses between progressive and traditional modes
+        function generateTimeSeriesMain() {
+            const generationMode = document.querySelector('input[name="generationMode"]:checked').value;
+            
+            if (generationMode === 'progressive') {
+                generateTimeSeriesProgressive();
+            } else {
+                generateTimeSeries();
+            }
         }
 
         // Progressive generation functions
@@ -825,26 +856,59 @@
                 return;
             }
 
-            let csvContent = 'Time,' + currentData.tagNames.join(',') + '\n';
+            // Create CSV content with timestamps
+            let csvContent = 'Timestamp,' + currentData.tagNames.join(',') + '\n';
+            
+            // Generate timestamps based on frequency
+            const frequency = currentData.frequency || 'hourly';
+            let timeUnit = 'H';
+            if (frequency === 'daily') timeUnit = 'D';
+            if (frequency === 'weekly') timeUnit = 'W';
             
             for (let i = 0; i < currentData.length; i++) {
-                const row = [i + 1].concat(
-                    currentData.tagNames.map(tag => currentData.timeSeries[tag] ? currentData.timeSeries[tag][i] : 'N/A')
+                const timestamp = `${timeUnit}${i + 1}`;
+                const row = [timestamp].concat(
+                    currentData.tagNames.map(tag => 
+                        currentData.timeSeries[tag] && currentData.timeSeries[tag][i] !== undefined 
+                            ? currentData.timeSeries[tag][i] 
+                            : 'N/A'
+                    )
                 );
                 csvContent += row.join(',') + '\n';
             }
 
+            // Create and download file
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             
             if (link.download !== undefined) {
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
-                link.setAttribute('download', `timeseries_${Date.now()}.csv`);
+                
+                // Create filename with timestamp and scenario info
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const scenarioName = currentData.scenario ? 
+                    currentData.scenario.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '_') : 
+                    'timeseries';
+                link.setAttribute('download', `${scenarioName}_${timestamp}.csv`);
+                
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                
+                // Show success message
+                const exportBtn = document.getElementById('exportBtn');
+                const originalText = exportBtn.textContent;
+                exportBtn.textContent = 'Downloaded!';
+                exportBtn.classList.add('bg-green-600');
+                exportBtn.classList.remove('bg-green-600');
+                
+                setTimeout(() => {
+                    exportBtn.textContent = originalText;
+                    exportBtn.classList.remove('bg-green-700');
+                    exportBtn.classList.add('bg-green-600');
+                }, 2000);
             }
         }
 
