@@ -10,7 +10,8 @@ import os
 import uvicorn
 from typing import Dict
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 # Import modules
 from api.startup import (
@@ -50,9 +51,15 @@ app = FastAPI(
 )
 
 
-@app.get("/", response_model=Dict[str, str])
-async def root():
-    """Root endpoint providing API information."""
+@app.get("/")
+async def serve_ui():
+    """Serve the TimeCraft UI."""
+    return FileResponse("scenario-timeseries.html")
+
+
+@app.get("/api", response_model=Dict[str, str])
+async def api_root():
+    """API root endpoint providing API information."""
     return {
         "message": "TimeCraft REST API",
         "version": "1.0.0",

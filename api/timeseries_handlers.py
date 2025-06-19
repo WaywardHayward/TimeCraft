@@ -10,7 +10,7 @@ from .models import (
 from .helpers import (
     create_demo_response, handle_api_error, generate_mock_timeseries,
     generate_mock_domain_series, generate_mock_target_aware_series,
-    parse_llm_timeseries_response
+    parse_llm_timeseries_response, generate_tag_names_from_description
 )
 
 
@@ -131,24 +131,32 @@ def handle_target_aware_generation(request: TargetAwareGenerationRequest, tardif
 def handle_aggregate_timeseries_generation(request: AggregateTimeSeriesRequest, bridge_text2ts_available: bool) -> JSONResponse:
     """Generate multiple time series data for different tags based on a text description."""
     try:
+        # Generate tag names based on the text description and number of tags requested
+        generated_tags = generate_tag_names_from_description(request.text_description, request.num_tags)
+        
         if not bridge_text2ts_available:
             # Generate mock data for each tag
             mock_results = {}
-            for tag in request.tags:
+            for i, tag in enumerate(generated_tags):
+                # Use different patterns for variety
+                patterns = ["default", "sine", "linear"]
+                pattern = patterns[i % len(patterns)]
+                base_value = 50.0 + (i * 20.0)  # Different base values for each tag
+                
                 mock_data = generate_mock_timeseries(
-                    request.length,
-                    f"{request.text} - {tag}",
-                    getattr(request, 'frequency', 'hourly')
+                    request.sequence_length,
+                    pattern,
+                    base_value
                 )
-                mock_results[tag] = mock_data["timeseries"]
+                mock_results[tag] = mock_data
             
             return create_demo_response(
                 "demo_mode",
                 "BRIDGE Text2TS model not available. This is a demo response with mock aggregate time series data.",
-                text=request.text,
-                tags=request.tags,
-                length=request.length,
-                frequency=getattr(request, 'frequency', 'hourly'),
+                text_description=request.text_description,
+                tags=generated_tags,
+                sequence_length=request.sequence_length,
+                num_tags=request.num_tags,
                 aggregate_timeseries=mock_results,
                 note="In production, this would generate actual multi-tag time series"
             )
@@ -158,11 +166,11 @@ def handle_aggregate_timeseries_generation(request: AggregateTimeSeriesRequest, 
         
         # Generate aggregate time series
         result = generate_aggregate_timeseries(
-            text=request.text,
-            tags=request.tags,
-            length=request.length,
-            frequency=getattr(request, 'frequency', 'hourly'),
-            domain=getattr(request, 'domain', None)
+            text=request.text_description,
+            tags=generated_tags,
+            length=request.sequence_length,
+            frequency='hourly',  # Default frequency
+            domain=None  # Default domain
         )
         
         # Parse LLM response if available
@@ -172,10 +180,10 @@ def handle_aggregate_timeseries_generation(request: AggregateTimeSeriesRequest, 
         
         return JSONResponse({
             "status": "success",
-            "text": request.text,
-            "tags": request.tags,
-            "length": request.length,
-            "frequency": getattr(request, 'frequency', 'hourly'),
+            "text_description": request.text_description,
+            "tags": generated_tags,
+            "sequence_length": request.sequence_length,
+            "num_tags": request.num_tags,
             "aggregate_timeseries": result.get("aggregate_timeseries", {}),
             "metadata": result.get("metadata", {}),
             "details": result
