@@ -25,6 +25,7 @@ class FallbackChatLLM:
         self.model_name = model_name
         self.temperature = temperature
         self.has_openai = self._check_openai_availability()
+        print(f"FallbackChatLLM initialized. OpenAI available: {self.has_openai}")
     
     def _check_openai_availability(self):
         """Check if OpenAI is available and properly configured."""
@@ -35,18 +36,57 @@ class FallbackChatLLM:
             # Just check if the module is available
             return bool(api_key)
         except ImportError:
+            print("OpenAI package not installed")
             return False
     
     def generate(self, prompt):
         """Generate method that mimics the BRIDGE ChatLLM interface."""
-        # Always return mock responses to avoid API deployment errors
-        # This ensures graceful degradation without OpenAI API calls
-        print("FallbackChatLLM: Using mock responses to avoid API deployment issues")
+        # Try to use the actual API first
+        try:
+            import openai
+            
+            # Configure for Azure OpenAI - use explicit endpoint and deployment
+            if os.environ.get('OPENAI_API_KEY'):
+                # Set Azure OpenAI specific configuration
+                openai.api_type = "azure"
+                openai.api_key = os.environ.get('OPENAI_API_KEY')
+                openai.api_base = os.environ.get(
+                    'OPENAI_API_BASE', 'https://oai-shared-02.openai.azure.com/')
+                openai.api_version = os.environ.get('OPENAI_API_VERSION', '2023-05-15')
+                
+                print(f"Using Azure OpenAI: {openai.api_base}, Model: {self.model_name}")
+                
+                # When using Azure OpenAI, we use the deployment name
+                deployment = os.environ.get('OPENAI_DEPLOYMENT_NAME', 'gpt-4o')
+                
+                # Create completion
+                response = openai.ChatCompletion.create(
+                    deployment_id=deployment,  # Use deployment_id for Azure OpenAI
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that returns only the requested data without explanation."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=self.temperature
+                )
+                
+                # Extract text response
+                return response.choices[0].message.content
+                
+        except Exception as e:
+            print(f"Azure OpenAI API call failed: {e}")
+            print("Falling back to mock responses")
+        
+        # Fall back to mock responses if API call fails
+        print("FallbackChatLLM: Using mock responses due to API issues")
         
         if "tag" in str(prompt).lower():
-            return "Temperature_Sensor, Pressure_Gauge, Flow_Rate_Monitor, Machine_Efficiency, Power_Consumption"
+            # Return mock tag names for RO system
+            return "Temperature_Sensor, Pressure_Differential, Salt_Rejection_Rate, Permeate_Flow, Feed_Pressure"
         else:
-            return "1.5, 2.3, 1.8, 2.1, 1.9, 2.4, 1.7, 2.0, 1.6, 2.2"
+            # Return more diverse mock time series data
+            import random
+            values = [str(round(50 + random.uniform(-10, 10), 2)) for _ in range(50)]
+            return ", ".join(values)
 
 
 def create_tag_generation_prompt(description: str, num_tags: int) -> str:
@@ -94,10 +134,13 @@ def generate_tag_names_with_llm(description: str, num_tags: int, chat_llm) -> Li
     """Generate tag names using LLM."""
     try:
         prompt = create_tag_generation_prompt(description, num_tags)
+        print(f"Generating tag names with prompt: '{prompt[:50]}...'")
         response = chat_llm.generate(prompt)
+        print(f"LLM tag name response: '{response[:50]}...'")
         return parse_tag_names_response(response, num_tags)
     except Exception as e:
         print(f"Error generating tag names with LLM: {e}")
+        print("Falling back to keyword-based tag generation")
         # Fallback to keyword-based generation
         return generate_tag_names_from_description(description, num_tags)
 
@@ -163,13 +206,35 @@ def generate_timeseries_with_llm(tag_name: str, description: str,
                                 chat_llm) -> List[float]:
     """Generate timeseries data using LLM."""
     try:
-        prompt = create_timeseries_generation_prompt(tag_name, description, sequence_length)
+        prompt = create_timeseries_generation_prompt(
+            tag_name, description, sequence_length
+        )
+        print(f"Generating timeseries for {tag_name} with prompt: '{prompt[:50]}...'")
+          # Use the model directly, regardless of whether it's GPT-4o or any other model
+        print(f"Attempting to generate timeseries with model: {getattr(chat_llm, 'model_name', 'unknown')}")
+            
         response = chat_llm.generate(prompt)
+        print(f"LLM timeseries response for {tag_name}: '{response[:50]}...'")
         return parse_timeseries_response(response, tag_name, sequence_length, tag_index)
     except Exception as e:
         print(f"Error generating timeseries with LLM for {tag_name}: {e}")
-        # Fallback to mock data
-        return generate_mock_timeseries(sequence_length, "default", 50.0 + (tag_index * 20.0))
+        print(f"Falling back to mock data generation for {tag_name}")
+        
+        # Determine pattern based on tag name to generate more realistic data
+        if "temperature" in tag_name.lower():
+            pattern = "sine"
+            base = 23.0 + (tag_index * 5.0)  # Around room temperature
+        elif "pressure" in tag_name.lower():
+            pattern = "linear" 
+            base = 80.0 + (tag_index * 10.0)  # Typical pressure values
+        elif "flow" in tag_name.lower():
+            pattern = "sine"
+            base = 100.0 + (tag_index * 20.0)  # Flow rate values
+        else:
+            pattern = "default"
+            base = 50.0 + (tag_index * 20.0)
+            
+        return generate_mock_timeseries(sequence_length, pattern, base)
 
 
 def handle_generate_timeseries_from_text(request: TextToTimeSeriesRequest, bridge_text2ts_available: bool) -> JSONResponse:
@@ -308,33 +373,39 @@ def handle_aggregate_timeseries_generation(request: AggregateTimeSeriesRequest, 
     """Generate multiple time series data for different tags based on a text description."""
     try:
         print(f"Aggregate generation started - bridge_text2ts_available: {bridge_text2ts_available}")
-        
         # Step 1: Try LLM-based generation (highest priority)
         llm_available = False
         chat_llm = None
-        
-        # Check if we can use LLM (either full BRIDGE ChatLLM or fallback)
+          # Check if we can use LLM (either full BRIDGE ChatLLM or fallback)
         if bridge_text2ts_available:
             try:
                 from BRIDGE.llm_agents.llm import ChatLLM
+                # Get the model name from the request
+                model_name = getattr(request, 'model_name', 'gpt-3.5-turbo')
+                # Use the requested model directly - no special handling for GPT-4o
+                print(f"Attempting to use model: {model_name}")
+                
                 chat_llm = ChatLLM(
-                    model_name=getattr(request, 'model_name', 'gpt-3.5-turbo'),
+                    model_name=model_name,
                     temperature=getattr(request, 'temperature', 0.1)
                 )
                 llm_available = True
-                print("Using full BRIDGE ChatLLM")
+                print(f"Using full BRIDGE ChatLLM with model {model_name}")
             except (ImportError, Exception) as e:
                 print(f"Full BRIDGE ChatLLM not available: {e}")
                 # Try fallback ChatLLM
                 try:
+                    # Keep using the requested model - no downgrade to gpt-3.5-turbo
+                    model_name = getattr(request, 'model_name', 'gpt-3.5-turbo')
+                    print(f"Using model {model_name} with fallback handler")
+                    
                     chat_llm = FallbackChatLLM(
-                        model_name=getattr(request, 'model_name', 'gpt-3.5-turbo'),
+                        model_name=model_name,
                         temperature=getattr(request, 'temperature', 0.1)
                     )
-                    # Set llm_available to False to avoid API deployment errors
-                    # This ensures we use keyword-based generation instead
+                    # Using mock generation is safer to avoid API deployment errors
                     llm_available = False
-                    print(f"Using fallback ChatLLM - Disabled LLM to avoid API deployment errors")
+                    print(f"Using fallback ChatLLM - Using mock data to avoid API deployment errors")
                 except Exception as e2:
                     print(f"Fallback ChatLLM failed: {e2}")
         
