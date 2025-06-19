@@ -35,11 +35,11 @@ class FallbackChatLLM:
         except ImportError:
             return False
     
-    def chat(self, messages):
-        """Chat method that mimics the BRIDGE ChatLLM interface."""
+    def generate(self, prompt):
+        """Generate method that mimics the BRIDGE ChatLLM interface."""
         if not self.has_openai:
             # Return mock responses if OpenAI is not available
-            if any("tags" in str(msg).lower() for msg in messages):
+            if "tag" in str(prompt).lower():
                 return "Temperature_Sensor, Pressure_Gauge, Flow_Rate_Monitor, Machine_Efficiency, Power_Consumption"
             else:
                 return "1.5, 2.3, 1.8, 2.1, 1.9, 2.4, 1.7, 2.0, 1.6, 2.2"
@@ -47,11 +47,8 @@ class FallbackChatLLM:
         try:
             import openai
             
-            # Convert messages to OpenAI format if needed
-            if isinstance(messages, str):
-                messages = [{"role": "user", "content": messages}]
-            elif isinstance(messages, list) and len(messages) > 0 and isinstance(messages[0], str):
-                messages = [{"role": "user", "content": " ".join(messages)}]
+            # Convert prompt to OpenAI messages format
+            messages = [{"role": "user", "content": prompt}]
             
             response = openai.ChatCompletion.create(
                 model=self.model_name,
@@ -65,7 +62,7 @@ class FallbackChatLLM:
         except Exception as e:
             print(f"OpenAI API error: {e}")
             # Return mock responses as fallback
-            if any("tags" in str(msg).lower() for msg in messages):
+            if "tag" in str(prompt).lower():
                 return "Temperature_Sensor, Pressure_Gauge, Flow_Rate_Monitor, Machine_Efficiency, Power_Consumption"
             else:
                 return "1.5, 2.3, 1.8, 2.1, 1.9, 2.4, 1.7, 2.0, 1.6, 2.2"
@@ -116,7 +113,7 @@ def generate_tag_names_with_llm(description: str, num_tags: int, chat_llm) -> Li
     """Generate tag names using LLM."""
     try:
         prompt = create_tag_generation_prompt(description, num_tags)
-        response = chat_llm.chat(prompt)
+        response = chat_llm.generate(prompt)
         return parse_tag_names_response(response, num_tags)
     except Exception as e:
         print(f"Error generating tag names with LLM: {e}")
@@ -186,7 +183,7 @@ def generate_timeseries_with_llm(tag_name: str, description: str,
     """Generate timeseries data using LLM."""
     try:
         prompt = create_timeseries_generation_prompt(tag_name, description, sequence_length)
-        response = chat_llm.chat(prompt)
+        response = chat_llm.generate(prompt)
         return parse_timeseries_response(response, tag_name, sequence_length, tag_index)
     except Exception as e:
         print(f"Error generating timeseries with LLM for {tag_name}: {e}")
