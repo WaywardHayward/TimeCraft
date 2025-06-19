@@ -12,6 +12,7 @@ from typing import Dict
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import modules
 from api.startup import (
@@ -48,6 +49,15 @@ app = FastAPI(
     description="REST API for TimeCraft time series generation framework",
     version="1.0.0",
     docs_url="/swagger"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 
