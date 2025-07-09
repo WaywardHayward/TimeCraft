@@ -1,5 +1,18 @@
 ![Logo](./figures/TimeCraft2.png)
 # Time Series Generation for Real-World Applications 
+
+## 🌐 New Web Interface Available!
+TimeCraft now includes a modern React frontend with Microsoft Fluent UI, providing an intuitive web interface for all TimeCraft functionality. [Learn more about the frontend →](./FRONTEND_README.md)
+
+**Key Frontend Features:**
+- 📊 **Drag-and-drop CSV upload** for time series data analysis
+- ✨ **Multi-agent text refinement** with real-time feedback
+- 🔍 **System status monitoring** for all components
+- 🎨 **Modern UI** built with Microsoft Fluent UI System
+
+**Quick Start:** Run `python api_server.py` and visit `http://localhost:8080` to access the web interface.
+
+--- 
 The rapid advancement of artificial intelligence has increasingly emphasized the critical role of time series data in powering intelligent decision-making across diverse domains, including healthcare, finance, energy, and transportation. In these fields, the ability to generate high-quality synthetic time series has become particularly valuable. **Time series generation** technology plays a vital role in alleviating **data scarcity**, especially in scenarios where collecting real-world data is expensive, time-consuming, or impractical. It also enables **privacy-preserving** analysis by producing realistic but non-identifiable synthetic data, reducing the risks associated with sharing sensitive information. Moreover, it supports **simulation and forecasting in risk-free environments**, allowing researchers and practitioners to safely explore hypothetical scenarios and train robust models. Together, these capabilities make time series generation an essential tool for a wide range of real-world applications.
 
 Despite its potential, most existing methods are **limited to single-domain generation** and struggle to generalize across diverse real-world scenarios, where time series patterns vary significantly. In addition, traditional models often **lack controllability**—they generate data unconditionally, without the ability to guide specific trends, seasonality, or domain characteristics. Yet such control is crucial in practical applications, where tailored synthetic data is needed to support specific scenarios. Furthermore, many approaches focus solely on **replicating the training data distribution**, without considering whether the generated data is truly beneficial for downstream tasks

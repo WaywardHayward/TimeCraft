@@ -16,12 +16,12 @@ class ApiClientClass {
   }
 
   async getSystemStatus() {
-    const response = await this.axiosInstance.get('/status');
+    const response = await this.axiosInstance.get('/api/status');
     return response.data;
   }
 
   async getHealth() {
-    const response = await this.axiosInstance.get('/health');
+    const response = await this.axiosInstance.get('/api/health');
     return response.data;
   }
 
@@ -43,7 +43,7 @@ class ApiClientClass {
     if (options.openaiApiVersion) formData.append('openai_api_version', options.openaiApiVersion);
     if (options.openaiApiType) formData.append('openai_api_type', options.openaiApiType);
 
-    const response = await this.axiosInstance.post('/generate-description', formData, {
+    const response = await this.axiosInstance.post('/api/generate-description', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -60,7 +60,7 @@ class ApiClientClass {
     openai_api_type?: string;
     openai_api_key?: string;
   }) {
-    const response = await this.axiosInstance.post('/refine-text', data);
+    const response = await this.axiosInstance.post('/api/refine-text', data);
     return response.data;
   }
 
@@ -68,7 +68,7 @@ class ApiClientClass {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await this.axiosInstance.post('/analyze-csv', formData, {
+    const response = await this.axiosInstance.post('/api/analyze-csv', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -84,7 +84,7 @@ class ApiClientClass {
     openai_api_type?: string;
     openai_api_key?: string;
   }) {
-    const response = await this.axiosInstance.post('/generate-timeseries-from-text', data);
+    const response = await this.axiosInstance.post('/api/generate-timeseries-from-text', data);
     return response.data;
   }
 }
