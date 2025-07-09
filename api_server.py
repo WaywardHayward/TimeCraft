@@ -10,7 +10,8 @@ import os
 import uvicorn
 from typing import Dict
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 # Import modules
 from api.startup import (
@@ -49,10 +50,15 @@ app = FastAPI(
     docs_url="/swagger"
 )
 
+# Configure static file serving for React frontend
+frontend_build_path = os.path.join(os.path.dirname(__file__), "frontend", "build")
+if os.path.exists(frontend_build_path):
+    app.mount("/static", StaticFiles(directory=os.path.join(frontend_build_path, "static")), name="static")
 
-@app.get("/", response_model=Dict[str, str])
-async def root():
-    """Root endpoint providing API information."""
+
+@app.get("/api", response_model=Dict[str, str])
+async def api_root():
+    """API root endpoint providing API information."""
     return {
         "message": "TimeCraft REST API",
         "version": "1.0.0",
@@ -65,19 +71,40 @@ async def root():
     }
 
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/", include_in_schema=False)
+async def serve_frontend():
+    """Serve the React frontend."""
+    if os.path.exists(frontend_build_path):
+        return FileResponse(os.path.join(frontend_build_path, "index.html"))
+    else:
+        return {"message": "Frontend not built. Please run 'npm run build' in the frontend directory."}
+
+
+@app.get("/{path:path}", include_in_schema=False)
+async def serve_frontend_routes(path: str):
+    """Serve React frontend routes (SPA routing)."""
+    if os.path.exists(frontend_build_path):
+        # Check if it's an API route
+        if path.startswith(("api/", "swagger", "docs", "health", "status", "generate-", "refine-", "analyze-")):
+            return {"error": "API endpoint not found"}
+        return FileResponse(os.path.join(frontend_build_path, "index.html"))
+    else:
+        return {"message": "Frontend not built. Please run 'npm run build' in the frontend directory."}
+
+
+@app.get("/api/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""
     return HealthResponse(status="healthy", message="TimeCraft API is running")
 
 
-@app.get("/status")
+@app.get("/api/status")
 async def status():
     """Get system status and available components."""
     return JSONResponse(get_component_status(COMPONENTS))
 
 
-@app.post("/generate-description")
+@app.post("/api/generate-description")
 async def generate_description(
     file: UploadFile = File(...),
     dataset_name: str = "uploaded_dataset",
@@ -95,40 +122,40 @@ async def generate_description(
     )
 
 
-@app.post("/refine-text")
+@app.post("/api/refine-text")
 async def refine_text(request: TextRefinementRequest):
     """Refine textual descriptions using multi-agent approach."""
     return handle_refine_text(request, COMPONENTS['TIMECRAFT_AVAILABLE'])
 
 
-@app.get("/models")
+@app.get("/api/models")
 async def list_models():
     """List available models and their status."""
     models_status = {
         "BRIDGE - Text-to-Time-Series": {
             "available": COMPONENTS['BRIDGE_TEXT2TS_AVAILABLE'],
             "description": "Generate time series data from text descriptions",
-            "endpoint": "/generate-timeseries-from-text"
+            "endpoint": "/api/generate-timeseries-from-text"
         },
         "BRIDGE - Aggregate Multi-Tag Generation": {
             "available": COMPONENTS['BRIDGE_TEXT2TS_AVAILABLE'],
             "description": "Generate multiple time series for different tags from a single text description",
-            "endpoint": "/generate-aggregate-timeseries"
+            "endpoint": "/api/generate-aggregate-timeseries"
         },
         "BRIDGE - Time-Series-to-Text": {
             "available": COMPONENTS['BRIDGE_AVAILABLE'],
             "description": "Generate text descriptions from time series data", 
-            "endpoint": "/generate-description"
+            "endpoint": "/api/generate-description"
         },
         "TimeDP - Domain Prompts": {
             "available": COMPONENTS['TIMEDP_AVAILABLE'],
             "description": "Domain-specific time series generation using diffusion models",
-            "endpoint": "/generate-timeseries-domain-prompt"
+            "endpoint": "/api/generate-timeseries-domain-prompt"
         },
         "TarDiff - Target-Aware Generation": {
             "available": COMPONENTS['TARDIFF_AVAILABLE'],
             "description": "Target-aware time series generation with classifier guidance",
-            "endpoint": "/generate-timeseries-target-aware"
+            "endpoint": "/api/generate-timeseries-target-aware"
         }
     }
     
@@ -138,31 +165,31 @@ async def list_models():
     })
 
 
-@app.post("/analyze-csv")
+@app.post("/api/analyze-csv")
 async def analyze_csv(file: UploadFile = File(...)):
     """Analyze uploaded CSV file and return basic statistics."""
     return handle_analyze_csv(file, HAS_PANDAS)
 
 
-@app.post("/generate-timeseries-from-text")
+@app.post("/api/generate-timeseries-from-text")
 async def generate_timeseries_from_text(request: TextToTimeSeriesRequest):
     """Generate time series data from text description using BRIDGE model."""
     return handle_generate_timeseries_from_text(request, COMPONENTS['BRIDGE_TEXT2TS_AVAILABLE'])
 
 
-@app.post("/generate-timeseries-domain-prompt")
+@app.post("/api/generate-timeseries-domain-prompt")
 async def generate_timeseries_domain_prompt(request: DomainPromptGenerationRequest):
     """Generate time series data using TimeDP domain prompts."""
     return handle_domain_prompt_generation(request, COMPONENTS['TIMEDP_AVAILABLE'])
 
 
-@app.post("/generate-timeseries-target-aware")
+@app.post("/api/generate-timeseries-target-aware")
 async def generate_timeseries_target_aware(request: TargetAwareGenerationRequest):
     """Generate time series data using TarDiff target-aware generation."""
     return handle_target_aware_generation(request, COMPONENTS['TARDIFF_AVAILABLE'])
 
 
-@app.post("/generate-aggregate-timeseries")
+@app.post("/api/generate-aggregate-timeseries")
 async def generate_aggregate_timeseries(request: AggregateTimeSeriesRequest):
     """Generate multiple time series data for different tags based on a text description."""
     return handle_aggregate_timeseries_generation(request, COMPONENTS['BRIDGE_TEXT2TS_AVAILABLE'])
